@@ -5,19 +5,22 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import static com.company.ArrayStoreClass.Arraymethod;
 
 public class Send_HTTP_Request2 {
-    static Map data = new HashMap();
+
     static ArrayList<String> country_list = new ArrayList<>();
     static ArrayList<String> as_owner_list = new ArrayList<>();
+    static ArrayList<Integer> Malicious = new ArrayList<>();
+    static ArrayList<Integer> Harmless = new ArrayList<>();
+
 
     public void call() throws IOException {
         String[] ipAddress = Arraymethod();
@@ -31,35 +34,48 @@ public class Send_HTTP_Request2 {
             }
 
         }
-        System.out.println(country_list);
-        System.out.println(as_owner_list);
-     //asmdlsds
+        exportToExcel();
 
     }
 
-//    private void exportToExcel() throws IOException {
-////        XSSFWorkbook workbook = new XSSFWorkbook();
-////        XSSFSheet sheet = workbook.createSheet("IP Address Check");
-//        Iterator hmIterator = data.entrySet().iterator();
-//        int rowno = 0;
-//
-//        while (hmIterator.hasNext()) {
-//
-//            Map.Entry mapElement = (Map.Entry) hmIterator.next();
-//
-//            HSSFRow row = hssfSheet.createRow(rowno++);
-//
-//            row.createCell(0).setCellValue((String) mapElement.getKey());
-//            row.createCell(1).setCellValue((String) mapElement.getValue());
-//
-//        }
-//        FileOutputStream fos = new FileOutputStream(".\\datafiles\\IpTracker.xlsx");
-//        hssfWorkbook.write(fos);
-//        fos.close();
-//
-//    }
+    private static void exportToExcel() throws IOException {
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet("Virus Total Details");
 
-    private static void call_me(String Ipaddress) throws IOException, JSONException {
+        for (int i = 0; i < as_owner_list.size(); i++) {
+            Row row = sheet.createRow(i);
+            for (int j = 0; j < 4; j++) {
+                Cell cell = row.createCell(j);
+                if (j == 0) {
+                    cell.setCellValue(Harmless.get(i));
+                } else if (j == 1) {
+                    cell.setCellValue(Malicious.get(i));
+                } else if (j == 2) {
+                    cell.setCellValue(country_list.get(i));
+                } else {
+                    cell.setCellValue(as_owner_list.get(i));
+                }
+            }
+
+
+        }
+
+        try {
+            //Write the workbook in file system
+            FileOutputStream out = new FileOutputStream(new File("VirusTotalDetails.xlsx"));
+
+            workbook.write(out);
+            out.close();
+            System.out.println("VirusTotalDetails.xlsx has been created successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            workbook.close();
+        }
+    }
+
+
+    private static void call_me(String Ipaddress) throws IOException {
 
         String url = "https://www.virustotal.com/api/v3/ip_addresses/" + Ipaddress;
         URL obj = new URL(url);
@@ -67,7 +83,8 @@ public class Send_HTTP_Request2 {
         // optional default is GET
         con.setRequestMethod("GET");
         //add request header
-        con.setRequestProperty("x-apikey", "37885d07c33824bf400eb283ad1280625716abb1074f32b8a6135a93caa412c7");
+        con.setRequestProperty("x-apikey", "abde006802b8e83f207e33b9cecff78771d43650ca3d2c498e499878f737fa17");
+
         int responseCode = con.getResponseCode();
         //  System.out.println("\nSending 'GET' request to URL : " + url);
         //System.out.println("Response Code : " + responseCode);
@@ -82,14 +99,24 @@ public class Send_HTTP_Request2 {
         //print in String
         //  System.out.println(response.toString());
         //Read JSON response and print
-        JSONObject myResponse = new JSONObject(response.toString());
 
-        String country = myResponse.getJSONObject("data").getJSONObject("attributes").getString("country");
+        try {
+            JSONObject myResponse = new JSONObject(response.toString());
+            String country = myResponse.getJSONObject("data").getJSONObject("attributes").getString("country");
 
-        String as_owner = myResponse.getJSONObject("data").getJSONObject("attributes").getString("as_owner");
+            String as_owner = myResponse.getJSONObject("data").getJSONObject("attributes").getString("as_owner");
+            int harmless = myResponse.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("harmless");
+            int malicious = myResponse.getJSONObject("data").getJSONObject("attributes").getJSONObject("last_analysis_stats").getInt("malicious");
+            Harmless.add(harmless);
+            Malicious.add(malicious);
+            country_list.add(country);
+            as_owner_list.add(as_owner);
+        } catch (JSONException e) {
+            System.out.println(Ipaddress + "\tMessage:-\t" + e.getMessage());
 
-        country_list.add(country);
-        as_owner_list.add(as_owner);
+        }
+
+
     }
 
 }

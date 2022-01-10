@@ -15,12 +15,10 @@ import java.util.Iterator;
 import static com.company.ArrayStoreClass.Arraymethod;
 
 public class Main {
-    //static HSSFWorkbook hssfWorkbook = new HSSFWorkbook();
-    // static HSSFSheet hssfSheet = hssfWorkbook.createSheet("Custom Sheet");
+
     public static void main(String[] args) throws IOException {
         // write your code here
         Send_HTTP_Request2 send = new Send_HTTP_Request2();
-
         send.call();
 
 
